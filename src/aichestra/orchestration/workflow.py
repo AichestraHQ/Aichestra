@@ -313,6 +313,8 @@ class WorkflowBindings:
     coordinator_binding: dict[str, Any] = field(default_factory=dict)
     role_bindings: dict[str, Any] = field(default_factory=dict)
     quota_policy: dict[str, Any] = field(default_factory=dict)
+    # Project opt-in: force research Task via roles.research before implement.
+    require_research: bool = False
 
 
 @dataclass
@@ -359,6 +361,7 @@ class ModeCPolicyPackage:
     research_artifact_notes_path: str = RESEARCH_NOTES_PATH
     research_artifact_file_chars: int = RESEARCH_ARTIFACT_FILE_CHARS
     research_artifact_compact_chars: int = RESEARCH_ARTIFACT_COMPACT_CHARS
+    require_research: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -369,6 +372,7 @@ class ModeCPolicyPackage:
             "research_artifact_notes_path": self.research_artifact_notes_path,
             "research_artifact_file_chars": self.research_artifact_file_chars,
             "research_artifact_compact_chars": self.research_artifact_compact_chars,
+            "require_research": self.require_research,
             "project_root": self.project_root,
             "aichestra_repo_root": self.aichestra_repo_root,
             "project_context": dict(self.project_context),
@@ -1389,6 +1393,7 @@ class ModeCRunController:
         )
         serialized_policy = serialize_execution_policy(self.bindings.execution_policy)
         explicit_query = bool((self.bindings.research_query or "").strip())
+        require_research = bool(self.bindings.require_research)
         research_artifact = resolve_research_artifact(
             speckit_scale=str(scale),
             speckit_steps=tuple(str(s) for s in steps),
@@ -1396,6 +1401,7 @@ class ModeCRunController:
             resume_or_audit=bool(self.state.metadata.get("orca_run_resumed")),
             cloud_handoff=self._research_cloud_handoff_signal(),
             research_useful=bool(self.state.metadata.get("research_useful_hint", True)),
+            require_research=require_research,
         )
         package = ModeCPolicyPackage(
             run_id=run_id,
@@ -1404,6 +1410,7 @@ class ModeCRunController:
             or self.bindings.task_prompt
             or "",
             research_artifact=research_artifact,
+            require_research=require_research,
             project_root=str(self.bindings.project_root or ""),
             aichestra_repo_root=str(self.bindings.aichestra_repo_root or ""),
             project_context=project_ctx,
@@ -1453,6 +1460,8 @@ class ModeCRunController:
         Static approximation until a coordinator creates a research Task.
         ``local_enabled`` is capability only and MUST NOT imply research.
         """
+        if bool(self.bindings.require_research):
+            return True
         if bool((self.bindings.research_query or "").strip()):
             return True
         if bool(self.state.metadata.get("orca_run_resumed")):

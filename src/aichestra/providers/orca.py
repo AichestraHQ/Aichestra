@@ -845,6 +845,14 @@ class OrcaProvider(ProviderAdapter):
                 "required. If live research output exceeds research_artifact_file_chars "
                 "while mode is none, escalate to file; if cloud handoff or output "
                 "exceeds research_artifact_compact_chars, use compacted. "
+                "When research_artifact is file or compacted, OR "
+                "POLICY_PACKAGE.require_research is true: BEFORE any implement "
+                "Dispatch, create a Task with task-title research, Dispatch it via "
+                "`aichestra dispatch-role --role research` on the bound "
+                "roles.research ExecutionTarget, wait for that worker_done, and "
+                "pass the research findings (notes path and/or SUMMARY) into the "
+                "subsequent implement Task spec. Do not substitute implement-side "
+                "code exploration for the research role. "
                 "Unsupported targets MUST NOT be dispatched. "
                 "Legacy preferred_lead/local_* fields are secondary compatibility seams only. "
                 "Ownership:\nYou own the dynamic DAG: create arbitrary Tasks/Dispatches through Orca. "
@@ -910,6 +918,7 @@ class OrcaProvider(ProviderAdapter):
                         "research_artifact_notes_path",
                         "research_artifact_file_chars",
                         "research_artifact_compact_chars",
+                        "require_research",
                     )
                     if request.context.get(key) is not None
                 }

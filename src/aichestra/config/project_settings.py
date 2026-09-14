@@ -38,12 +38,21 @@ def project_config_path(project_root: Path | str) -> Path:
     return project_aichestra_dir(project_root) / PROJECT_CONFIG_NAME
 
 
+def require_research_enabled(config: Mapping[str, Any] | None) -> bool:
+    """Project opt-in: Mode C MUST dispatch roles.research before implement."""
+    orch = (config or {}).get("orchestration")
+    if not isinstance(orch, Mapping):
+        return False
+    return bool(orch.get("require_research"))
+
+
 def default_project_config(*, project_root: Path | str | None = None) -> dict[str, Any]:
     """Default project.json — roles/quota; verification off (fail-closed) until enabled."""
     _ = project_root
     return {
         "orchestration": {
             "coordinator": coordinator_binding_to_dict(default_coordinator_binding()),
+            "require_research": False,
         },
         "roles": role_bindings_to_dict(default_role_bindings()),
         "quota": default_quota_policy().to_dict(),
@@ -147,7 +156,10 @@ def show_settings(project_root: Path | str) -> dict[str, Any]:
     return {
         "project_root": str(Path(project_root).resolve()),
         "path": str(project_config_path(project_root)),
-        "orchestration": {"coordinator": coordinator_binding_to_dict(coordinator)},
+        "orchestration": {
+            "coordinator": coordinator_binding_to_dict(coordinator),
+            "require_research": require_research_enabled(raw),
+        },
         "roles": role_bindings_to_dict(bindings),
         "quota": quota.to_dict(),
         "verification": {
@@ -266,6 +278,18 @@ def _assign_dotted(
         if not isinstance(orch, dict):
             raise ValueError("orchestration must be an object")
         orch["coordinator"] = binding.to_dict()
+        return
+    if (
+        len(parts) == 2
+        and parts[0] == "orchestration"
+        and parts[1] == "require_research"
+    ):
+        orch = target.setdefault("orchestration", {})
+        if not isinstance(orch, dict):
+            raise ValueError("orchestration must be an object")
+        if not isinstance(value, bool):
+            raise ValueError("orchestration.require_research must be true or false")
+        orch["require_research"] = value
         return
     if (
         len(parts) == 2

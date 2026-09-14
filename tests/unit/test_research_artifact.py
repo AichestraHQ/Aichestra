@@ -140,6 +140,29 @@ def test_research_disabled_forces_none() -> None:
     )
 
 
+def test_require_research_is_file() -> None:
+    path = classify_speckit_scale(risk="low", estimated_files=1)
+    assert (
+        resolve_research_artifact(
+            speckit_scale=path.scale.value,
+            speckit_steps=path.steps,
+            require_research=True,
+        )
+        == "file"
+    )
+
+
+def test_require_research_still_respects_research_useful_false() -> None:
+    assert (
+        resolve_research_artifact(
+            speckit_scale="medium",
+            require_research=True,
+            research_useful=False,
+        )
+        == "none"
+    )
+
+
 def test_configured_role_bindings_alone_do_not_force_file() -> None:
     """Defaults always list research+implement; that is not multi-dispatch."""
     path = classify_speckit_scale(risk="low", estimated_files=1)

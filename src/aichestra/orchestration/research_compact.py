@@ -54,6 +54,7 @@ def resolve_research_artifact(
     expected_summary_chars: int = 0,
     cloud_handoff: bool = False,
     research_useful: bool = True,
+    require_research: bool = False,
     file_threshold_chars: int = RESEARCH_ARTIFACT_FILE_CHARS,
     compact_threshold_chars: int = RESEARCH_ARTIFACT_COMPACT_CHARS,
 ) -> ResearchArtifact:
@@ -65,7 +66,8 @@ def resolve_research_artifact(
     Priority (stronger artifact wins when signals conflict):
     1. ``compacted`` — cloud handoff boundary or large volume
     2. ``file`` — explicit ``--query``, MEDIUM/LARGE Spec Kit, multi-role
-       research path, resume/audit, or summary above file threshold
+       research path, resume/audit, project ``require_research``, or summary
+       above file threshold
     3. ``none`` — SMALL single-step continue-in-Run (worker_done body only)
     """
     if not research_useful:
@@ -85,6 +87,7 @@ def resolve_research_artifact(
         or medium_or_large
         or multi_role
         or resume_or_audit
+        or require_research
         or summary_chars >= file_threshold_chars
     ):
         return "file"
