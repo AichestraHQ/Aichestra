@@ -676,7 +676,10 @@ def _cmd_orchestrate(args: argparse.Namespace) -> int:
     from aichestra.providers.orca import OrcaProvider
     from aichestra.providers.quota_guard import real_provider_execution_blocked
 
-    from aichestra.config.project_settings import resolve_project_root
+    from aichestra.config.project_settings import (
+        require_research_enabled,
+        resolve_project_root,
+    )
     project_root = resolve_project_root(args.project_root)
     if not project_root.is_dir():
         sys.stderr.write(f"Mode C --project-root is not a directory: {project_root}\n")
@@ -874,6 +877,7 @@ def _cmd_orchestrate(args: argparse.Namespace) -> int:
         role_bindings=role_bindings_dict,
         quota_policy=quota_policy_dict,
         coordinator_binding=coordinator_dict,
+        require_research=require_research_enabled(cfg),
     )
     wf = ModeCRunController(
         mode=Mode.ORCHESTRATED,
